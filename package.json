@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node src/prisma/seed.ts",
     "db:seed:ghana": "ts-node src/prisma/seed-ghana.ts",
+    "db:seed:admin": "ts-node src/prisma/seed-admin-user.ts",
     "db:studio": "prisma studio",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
