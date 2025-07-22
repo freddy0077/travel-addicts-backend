@@ -55,6 +55,7 @@ show_help() {
     echo "  seed          Seed database with full sample data"
     echo "  seed-admin    Create admin user (bookings@traveladdicts.org)"
     echo "  seed-ghana    Seed with Ghana tourism data"
+    echo "  seed-gallery  Seed with gallery images data"
     echo "  reset-db      Reset database (WARNING: destroys all data)"
     echo "  studio        Open Prisma Studio"
     echo "  build         Build Docker images"
@@ -157,6 +158,13 @@ seed_ghana() {
     print_status "Seeding Ghana tourism data..."
     docker-compose --profile seed run --rm seed-ghana
     print_success "Ghana tourism data seeded successfully"
+}
+
+# Seed gallery images data
+seed_gallery() {
+    print_status "Seeding gallery images data..."
+    docker-compose --profile seed run --rm seed-gallery
+    print_success "Gallery images data seeded successfully"
 }
 
 # Reset database
@@ -300,6 +308,9 @@ main() {
             ;;
         "seed-ghana")
             seed_ghana
+            ;;
+        "seed-gallery")
+            seed_gallery
             ;;
         "reset-db")
             reset_database

@@ -41,6 +41,10 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 
+# Copy source files needed for seeders (ts-node execution)
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+
 # Copy environment files (will be overridden by docker-compose)
 COPY .env* ./
 
