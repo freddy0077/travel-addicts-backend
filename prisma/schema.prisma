@@ -1,0 +1,459 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// USER MANAGEMENT & AUTHENTICATION
+// ================================
+
+enum UserRole {
+  SUPER_ADMIN
+  CONTENT_MANAGER
+  CUSTOMER_SERVICE
+  MARKETING
+  EDITOR
+  CUSTOMER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole @default(CUSTOMER)
+  password  String?
+  image     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  blogPosts BlogPost[]
+  bookings  Booking[]
+  reviews   Review[]
+  galleryImages GalleryImage[]
+
+  @@map("users")
+}
+
+// ================================
+// GEOGRAPHIC & DESTINATION DATA
+// ================================
+
+model Country {
+  id        String @id @default(cuid())
+  name      String @unique
+  code      String @unique // ISO country code
+  continent String
+
+  // Relations
+  destinations Destination[]
+
+  @@map("countries")
+}
+
+model Destination {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  countryId   String
+  type        String   // Beach, Mountain, City, Safari, etc.
+  season      String   // Best season to visit
+  description String   @db.Text
+  highlights  String[] // Array of highlights
+  image       String   // Main destination image
+  gallery     String[] // Array of gallery images
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  priceFrom   Int      // Starting price in GHS pesewas
+  duration    String   // Typical duration
+  bestTime    String   // Best time to visit
+  climate     String   // Climate information
+  activities  String[] // Available activities
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  country Country @relation(fields: [countryId], references: [id])
+  tours   Tour[]
+
+  @@map("destinations")
+}
+
+// ================================
+// TOUR & PACKAGE MANAGEMENT
+// ================================
+
+enum TourStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DifficultyLevel {
+  EASY
+  MODERATE
+  CHALLENGING
+  EXTREME
+}
+
+model Tour {
+  id            String          @id @default(cuid())
+  title         String
+  slug          String          @unique
+  destinationId String
+  description   String          @db.Text
+  highlights    String[]        // Tour highlights
+  inclusions    String[]        // What's included
+  exclusions    String[]        // What's not included
+  duration      Int             // Duration in days
+  groupSizeMax  Int             // Maximum group size
+  difficulty    DifficultyLevel @default(EASY)
+  priceFrom     Int             // Starting price in GHS pesewas
+  images        String[]        // Tour images
+  featured      Boolean         @default(false)
+  status        TourStatus      @default(DRAFT)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  destination Destination       @relation(fields: [destinationId], references: [id])
+  itinerary   TourItinerary[]
+  pricing     TourPricing[]
+  bookings    Booking[]
+  reviews     Review[]
+
+  @@map("tours")
+}
+
+model TourItinerary {
+  id            String   @id @default(cuid())
+  tourId        String
+  dayNumber     Int
+  title         String
+  description   String   @db.Text
+  meals         String[] // Breakfast, Lunch, Dinner
+  accommodation String?
+  activities    String[]
+
+  // Relations
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@unique([tourId, dayNumber])
+  @@map("tour_itineraries")
+}
+
+model TourPricing {
+  id             String   @id @default(cuid())
+  tourId         String
+  season         String   // High, Low, Peak season
+  priceAdult     Int      // Price per adult in GHS pesewas
+  priceChild     Int      // Price per child in GHS pesewas
+  availableDates String[] // Available departure dates
+  maxCapacity    Int      // Maximum capacity for this pricing
+
+  // Relations
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@map("tour_pricing")
+}
+
+// ================================
+// CONTENT MANAGEMENT
+// ================================
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogCategory {
+  id          String @id @default(cuid())
+  name        String @unique
+  slug        String @unique
+  description String @db.Text
+
+  // Relations
+  posts BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id             String      @id @default(cuid())
+  title          String
+  slug           String      @unique
+  excerpt        String      @db.Text
+  content        String      @db.Text
+  authorId       String
+  publishedAt    DateTime?
+  categoryId     String
+  tags           String[]
+  image          String
+  featured       Boolean     @default(false)
+  status         PostStatus  @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  author   User          @relation(fields: [authorId], references: [id])
+  category BlogCategory  @relation(fields: [categoryId], references: [id])
+
+  @@map("blog_posts")
+}
+
+// ================================
+// BOOKING & CUSTOMER MANAGEMENT
+// ================================
+
+model Customer {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  firstName           String
+  lastName            String
+  phone               String
+  dateOfBirth         DateTime?
+  nationality         String?
+  passportNumber      String?
+  emergencyContact    String?
+  dietaryRequirements String?
+  medicalConditions   String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  bookings Booking[]
+  reviews  Review[]
+
+  @@map("customers")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIALLY_PAID
+  REFUNDED
+  FAILED
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  bookingReference String        @unique
+  tourId           String
+  customerId       String
+  userId           String?       // If booked by registered user
+  startDate        DateTime
+  endDate          DateTime
+  adultsCount      Int
+  childrenCount    Int           @default(0)
+  totalPrice       Int           // Total price in GHS pesewas
+  status           BookingStatus @default(PENDING)
+  paymentStatus    PaymentStatus @default(PENDING)
+  specialRequests  String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  tour      Tour              @relation(fields: [tourId], references: [id])
+  customer  Customer          @relation(fields: [customerId], references: [id])
+  user      User?             @relation(fields: [userId], references: [id])
+  travelers BookingTraveler[]
+  payments  Payment[]
+
+  @@map("bookings")
+}
+
+model BookingTraveler {
+  id                  String  @id @default(cuid())
+  bookingId           String
+  firstName           String
+  lastName            String
+  age                 Int
+  passportNumber      String?
+  dietaryRequirements String?
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_travelers")
+}
+
+// ================================
+// PAYMENT & FINANCIAL
+// ================================
+
+enum PaymentMethod {
+  CARD
+  MOBILE_MONEY
+  BANK_TRANSFER
+  USSD
+  CASH
+  CHEQUE
+  OTHER
+}
+
+model Payment {
+  id                     String        @id @default(cuid())
+  bookingId              String
+  paystackTransactionId  String?       @unique
+  paystackReference      String?       @unique
+  amount                 Int           // Amount in GHS pesewas
+  currency               String        @default("GHS")
+  status                 PaymentStatus @default(PENDING)
+  paymentMethod          PaymentMethod
+  mobileMoneyProvider    String?       // MTN, Vodafone, AirtelTigo
+  bankCode               String?       // Bank code for transfers
+  metadata               Json?         // Additional payment metadata
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
+
+// ================================
+// REVIEWS & RATINGS
+// ================================
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id              String       @id @default(cuid())
+  tourId          String
+  customerId      String?
+  userId          String?
+  rating          Int          // 1-5 stars
+  title           String
+  content         String       @db.Text
+  verifiedBooking Boolean      @default(false)
+  status          ReviewStatus @default(PENDING)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  tour     Tour      @relation(fields: [tourId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+
+  @@map("reviews")
+}
+
+// ================================
+// MEDIA & ASSETS
+// ================================
+
+model MediaFile {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  filePath     String   // Full URL path
+  url          String   // Public URL
+  key          String   // S3 key
+  size         Int      // File size in bytes
+  contentType  String   // MIME type
+  folder       String   // Folder/category
+  altText      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("media_files")
+}
+
+// ================================
+// SYSTEM & CONFIGURATION
+// ================================
+
+enum SettingType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+}
+
+model SiteSetting {
+  id          String      @id @default(cuid())
+  key         String      @unique
+  value       String
+  type        SettingType @default(STRING)
+  description String?
+  updatedAt   DateTime    @updatedAt
+
+  @@map("site_settings")
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  subject     String
+  htmlContent String   @db.Text
+  textContent String   @db.Text
+  variables   String[] // Available template variables
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+// ================================
+// GALLERY & MEDIA
+// ================================
+
+enum GalleryCategory {
+  DESTINATIONS
+  TOURS
+  CULTURE
+  WILDLIFE
+  LANDSCAPES
+  PEOPLE
+  FOOD
+  ACTIVITIES
+}
+
+model GalleryImage {
+  id           String          @id @default(cuid())
+  title        String
+  description  String?         @db.Text
+  imageUrl     String          // URL to the image file
+  thumbnailUrl String?         // Optional thumbnail URL
+  altText      String
+  location     String?
+  category     GalleryCategory @default(DESTINATIONS)
+  tags         String[]        // Array of tags for filtering
+  photographer String?         // Photographer credit
+  featured     Boolean         @default(false) // Featured images for homepage
+  published    Boolean         @default(true)  // Published status
+  sortOrder    Int?            // For manual ordering
+  metadata     Json?           // Additional metadata (EXIF, etc.)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  uploadedById String?
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
+
+  @@map("gallery_images")
+}
