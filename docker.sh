@@ -52,7 +52,9 @@ show_help() {
     echo "  logs          Show logs for all services"
     echo "  logs-backend  Show backend logs only"
     echo "  migrate       Run database migrations"
-    echo "  seed          Seed database with initial data"
+    echo "  seed          Seed database with full sample data"
+    echo "  seed-admin    Create admin user (bookings@traveladdicts.org)"
+    echo "  seed-ghana    Seed with Ghana tourism data"
     echo "  reset-db      Reset database (WARNING: destroys all data)"
     echo "  studio        Open Prisma Studio"
     echo "  build         Build Docker images"
@@ -135,9 +137,26 @@ run_migrations() {
 
 # Seed database
 seed_database() {
-    print_status "Seeding database..."
-    docker-compose exec backend npx prisma db seed
+    print_status "Seeding database with full sample data..."
+    docker-compose --profile seed run --rm seed
     print_success "Database seeded successfully"
+}
+
+# Seed admin user
+seed_admin() {
+    print_status "Creating admin user (bookings@traveladdicts.org)..."
+    docker-compose --profile seed run --rm seed-admin
+    print_success "Admin user created successfully"
+    print_status "Login credentials:"
+    print_status "  Email: bookings@traveladdicts.org"
+    print_status "  Password: topman88"
+}
+
+# Seed Ghana tourism data
+seed_ghana() {
+    print_status "Seeding Ghana tourism data..."
+    docker-compose --profile seed run --rm seed-ghana
+    print_success "Ghana tourism data seeded successfully"
 }
 
 # Reset database
@@ -275,6 +294,12 @@ main() {
             ;;
         "seed")
             seed_database
+            ;;
+        "seed-admin")
+            seed_admin
+            ;;
+        "seed-ghana")
+            seed_ghana
             ;;
         "reset-db")
             reset_database

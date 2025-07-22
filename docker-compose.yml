@@ -113,13 +113,67 @@ services:
     container_name: travel-addicts-migrate
     environment:
       DATABASE_URL: "postgresql://travel_user:travel_secure_password_2024@postgres:5432/travel_addicts?schema=public"
-    command: ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
+    command: ["sh", "-c", "npx prisma migrate deploy"]
     networks:
       - travel-network
     depends_on:
       postgres:
         condition: service_healthy
     restart: "no"
+
+  # Database Seeder Service (Full seed with sample data)
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: travel-addicts-seed
+    environment:
+      DATABASE_URL: "postgresql://travel_user:travel_secure_password_2024@postgres:5432/travel_addicts?schema=public"
+    command: ["npx", "prisma", "db", "seed"]
+    networks:
+      - travel-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - seed
+
+  # Admin User Seeder Service (Creates admin user only)
+  seed-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: travel-addicts-seed-admin
+    environment:
+      DATABASE_URL: "postgresql://travel_user:travel_secure_password_2024@postgres:5432/travel_addicts?schema=public"
+    command: ["npm", "run", "db:seed:admin"]
+    networks:
+      - travel-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - seed
+
+  # Ghana Tourism Seeder Service (Ghana-specific data)
+  seed-ghana:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: travel-addicts-seed-ghana
+    environment:
+      DATABASE_URL: "postgresql://travel_user:travel_secure_password_2024@postgres:5432/travel_addicts?schema=public"
+    command: ["npm", "run", "db:seed:ghana"]
+    networks:
+      - travel-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - seed
 
   # Prisma Studio (Optional - for database management)
   prisma-studio:
