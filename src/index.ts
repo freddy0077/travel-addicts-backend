@@ -58,7 +58,19 @@ const yoga = createYoga({
   schema,
   context: createContext,
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',"http://15.237.28.175:4000"],
+    origin: [
+      // Local development
+      'http://localhost:3000', 
+      'http://localhost:3001', 
+      'http://localhost:3002',
+      // Production domains
+      'http://traveladdicts.org',
+      'https://traveladdicts.org',
+      'http://www.traveladdicts.org',
+      'https://www.traveladdicts.org',
+      // Backend server (for testing)
+      'http://15.237.28.175:4000'
+    ],
     credentials: true
   },
   graphqlEndpoint: '/graphql',
