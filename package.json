@@ -14,6 +14,7 @@
     "db:seed": "ts-node src/prisma/seed.ts",
     "db:seed:ghana": "ts-node src/prisma/seed-ghana.ts",
     "db:seed:admin": "ts-node src/prisma/seed-admin-user.ts",
+    "db:seed:gallery": "ts-node prisma/seed-gallery.ts",
     "db:studio": "prisma studio",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
@@ -61,5 +62,8 @@
     "dotenv": "^17.2.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.4.0"
+  },
+  "prisma": {
+    "seed": "ts-node src/prisma/seed.ts"
   }
 }

@@ -175,6 +175,24 @@ services:
     profiles:
       - seed
 
+  # Gallery Seeder Service (Gallery images data)
+  seed-gallery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: travel-addicts-seed-gallery
+    environment:
+      DATABASE_URL: "postgresql://travel_user:travel_secure_password_2024@postgres:5432/travel_addicts?schema=public"
+    command: ["npm", "run", "db:seed:gallery"]
+    networks:
+      - travel-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - seed
+
   # Prisma Studio (Optional - for database management)
   prisma-studio:
     build:
