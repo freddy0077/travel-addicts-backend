@@ -69,7 +69,7 @@ const yoga = createYoga({
       'http://www.traveladdicts.org',
       'https://www.traveladdicts.org',
       // Backend server (for testing)
-      'http://15.237.28.175:4000'
+      'http://13.36.178.239:4000'
     ],
     credentials: true
   },
