@@ -65,6 +65,7 @@ const yoga = createYoga({
       'http://localhost:3002',
       // Production domains
       'http://traveladdicts.org',
+      'http://traveladdicts.org:3000',
       'https://traveladdicts.org',
       'http://www.traveladdicts.org',
       'https://www.traveladdicts.org',
