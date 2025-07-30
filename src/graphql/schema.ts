@@ -441,6 +441,22 @@ export const typeDefs = `
     metadata: String
   }
 
+  type CustomBookingResponse {
+    success: Boolean!
+    message: String!
+  }
+
+  input CustomBookingInput {
+    name: String!
+    email: String!
+    phone: String
+    destination: String!
+    travelDates: String!
+    travelers: Int!
+    budget: Int!
+    message: String!
+  }
+
   # Media Upload Types
   type MediaFile {
     id: ID!
@@ -699,6 +715,9 @@ export const typeDefs = `
     createGalleryImage(input: CreateGalleryImageInput!): GalleryImage!
     updateGalleryImage(id: ID!, input: UpdateGalleryImageInput!): GalleryImage!
     deleteGalleryImage(id: ID!): Boolean!
+
+    # Custom Booking
+    submitCustomBooking(input: CustomBookingInput!): CustomBookingResponse!
   }
 
   input CreateDestinationInput {

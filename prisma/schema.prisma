@@ -457,3 +457,17 @@ model GalleryImage {
 
   @@map("gallery_images")
 }
+
+model CustomBooking {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  destination String
+  travelDates String
+  travelers   Int
+  budget      Int
+  message     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

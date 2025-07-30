@@ -2501,11 +2501,44 @@ const resolvers = {
         throw new Error(`Failed to delete gallery image: ${error?.message || 'Unknown error'}`);
       }
     },
+    submitCustomBooking: async (_: any, { input }: { input: { name: string; email: string; phone?: string; destination: string; travelDates: string; travelers: number; budget: number; message: string; } }) => {
+      try {
+        console.log('Received custom booking request:', input);
+
+        const customBooking = await prisma.customBooking.create({
+          data: {
+            name: input.name,
+            email: input.email,
+            phone: input.phone,
+            destination: input.destination,
+            travelDates: input.travelDates,
+            travelers: input.travelers,
+            budget: input.budget,
+            message: input.message,
+          },
+        });
+
+        console.log('Successfully saved custom booking:', customBooking.id);
+
+        // Optional: Here you could trigger an email notification to the admin or user
+
+        return {
+          success: true,
+          message: 'Your custom trip request has been submitted successfully. We will get back to you shortly!',
+        };
+      } catch (error) {
+        console.error('Error submitting custom booking:', error);
+        return {
+          success: false,
+          message: 'An error occurred while submitting your request. Please try again.',
+        };
+      }
+    },
   },
 
   Tour: {
     // Computed field: category based on tour title/description
-    category: (parent: any) => {
+    category(parent: any) {
       const title = parent.title?.toLowerCase() || '';
       const description = parent.description?.toLowerCase() || '';
       
@@ -2532,7 +2565,7 @@ const resolvers = {
     },
 
     // Computed field: features based on inclusions
-    features: (parent: any) => {
+    features(parent: any) {
       const features: string[] = [];
       const inclusions = parent.inclusions || [];
       
@@ -2560,7 +2593,7 @@ const resolvers = {
     },
 
     // Computed field: season based on destination or tour-specific data
-    season: (parent: any) => {
+    season(parent: any) {
       if (parent.destination?.season) {
         return parent.destination.season;
       }
@@ -2573,7 +2606,7 @@ const resolvers = {
     },
 
     // Computed field: rating from reviews
-    rating: (parent: any) => {
+    rating(parent: any) {
       if (!parent.reviews || parent.reviews.length === 0) {
         return 0;
       }
@@ -2582,12 +2615,12 @@ const resolvers = {
     },
 
     // Computed field: review count
-    reviewCount: (parent: any) => {
+    reviewCount(parent: any) {
       return parent.reviews ? parent.reviews.length : 0;
     },
 
     // Provide empty pricing array for now (can be enhanced later)
-    pricing: () => {
+    pricing() {
       return [];
     }
   }
