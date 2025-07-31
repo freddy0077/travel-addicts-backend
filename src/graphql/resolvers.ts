@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { paystackService } from '../services/paystack';
+import { emailService } from '../services/email';
 import { mediaService } from '../services/mediaService';
 
 const prisma = new PrismaClient();
@@ -1711,14 +1712,29 @@ const resolvers = {
       }
 
       const booking = await prisma.booking.findUnique({
-        where: { id }
+        where: { id },
+        include: {
+          tour: {
+            include: {
+              destination: {
+                include: {
+                  country: true
+                }
+              }
+            }
+          },
+          customer: true,
+          user: true,
+          travelers: true,
+          payments: true
+        }
       });
 
       if (!booking) {
         throw new Error('Booking not found');
       }
 
-      return await prisma.booking.update({
+      const updatedBooking = await prisma.booking.update({
         where: { id },
         data: { status: status as any }, // Cast to avoid enum type issues
         include: {
@@ -1737,6 +1753,34 @@ const resolvers = {
           payments: true
         }
       });
+
+      // Send confirmation email if status is changed to CONFIRMED
+      if (status === 'CONFIRMED' && booking.status !== 'CONFIRMED') {
+        try {
+          const emailSent = await emailService.sendBookingConfirmationEmail({
+            customerName: `${updatedBooking.customer.firstName} ${updatedBooking.customer.lastName}`,
+            customerEmail: updatedBooking.customer.email,
+            bookingReference: updatedBooking.bookingReference,
+            tourTitle: updatedBooking.tour.title,
+            destination: `${updatedBooking.tour.destination.name}, ${updatedBooking.tour.destination.country.name}`,
+            startDate: updatedBooking.startDate.toLocaleDateString(),
+            endDate: updatedBooking.endDate.toLocaleDateString(),
+            travelers: updatedBooking.adultsCount + updatedBooking.childrenCount,
+            totalPrice: updatedBooking.totalPrice, // Send price as dollars without conversion
+          });
+
+          if (emailSent) {
+            console.log('✅ Booking confirmation email sent successfully for:', updatedBooking.bookingReference);
+          } else {
+            console.log('⚠️ Booking confirmation email failed for:', updatedBooking.bookingReference);
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending booking confirmation email:', emailError);
+          // Don't fail the status update if email fails
+        }
+      }
+
+      return updatedBooking;
     },
 
     // Create Booking
@@ -2520,12 +2564,34 @@ const resolvers = {
 
         console.log('Successfully saved custom booking:', customBooking.id);
 
-        // Optional: Here you could trigger an email notification to the admin or user
+        // Send email notifications
+        try {
+          const emailSent = await emailService.sendCustomBookingNotification({
+            name: input.name,
+            email: input.email,
+            phone: input.phone,
+            destination: input.destination,
+            travelDates: input.travelDates,
+            travelers: input.travelers,
+            budget: input.budget,
+            message: input.message,
+          });
+
+          if (emailSent) {
+            console.log('✅ Email notifications sent successfully for custom booking:', customBooking.id);
+          } else {
+            console.log('⚠️ Email notifications failed for custom booking:', customBooking.id);
+          }
+        } catch (emailError) {
+          console.error('❌ Error sending email notifications:', emailError);
+          // Don't fail the entire request if email fails
+        }
 
         return {
           success: true,
           message: 'Your custom trip request has been submitted successfully. We will get back to you shortly!',
         };
+
       } catch (error) {
         console.error('Error submitting custom booking:', error);
         return {
